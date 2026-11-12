@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Интерактив: Учимся работать в команде</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+
+:root {
+    --primary: #6c5ce7;
+    --secondary: #fd79a8;
+    --success: #00b894;
+    --warning: #fdcb6e;
+    --info: #0984e3;
+    --dark: #2d3436;
+    --light: #f7f5ff;
+    --bg: #f0edff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+
+body {
+    background: linear-gradient(135deg, var(--bg) 0%, #fef9f3 50%, #e8f8f0 100%);
+    color: var(--dark);
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: "МЯГКАЯ МАТЕМАТИКА · КОМАНДА";
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    font-size: 60px; font-weight: 900; color: rgba(108, 92, 231, 0.03);
+    white-space: nowrap; pointer-events: none; z-index: 0; letter-spacing: 5px;
+}
+
+.container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+
+h1 { text-align: center; font-size: 2rem; font-weight: 900; color: var(--primary); margin-bottom: 10px; }
+.subtitle { text-align: center; color: #636e72; margin-bottom: 25px; font-weight: 600; }
+
+/* Навигация по разделам */
+.tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
+.tab-btn {
+    padding: 10px 18px; border: 2px solid transparent; border-radius: 30px;
+    background: #fff; color: #636e72; font-weight: 800; font-size: 0.9rem;
+    cursor: pointer; white-space: nowrap; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 4px 15px rgba(108,92,231,0.3); }
+
+/* Экран */
+.screen { display: none; animation: fadeIn 0.4s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Памятка */
+.memo {
+    background: #fff; padding: 20px; border-radius: 16px; margin-bottom: 20px;
+    border-left: 6px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+.memo h3 { color: var(--primary); margin-bottom: 10px; font-size: 1.2rem; }
+.memo p { font-size: 1rem; line-height: 1.6; margin-bottom: 8px; }
+.memo b { color: var(--secondary); }
+
+/* Drag & Drop */
+.dnd-container {
+    display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;
+}
+.dnd-pool {
+    flex: 1; min-width: 200px; background: #fff; padding: 15px; border-radius: 16px;
+    border: 3px dashed #e0dff5; min-height: 150px; display: flex; flex-direction: column; gap: 8px;
+}
+.dnd-pool h4 { text-align: center; color: #b2bec3; margin-bottom: 10px; font-size: 0.9rem; }
+.dnd-item {
+    padding: 10px 15px; background: #f8f9fa; border: 2px solid #e0dff5; border-radius: 8px;
+    font-weight: 700; cursor: pointer; transition: 0.2s; text-align: center;
+}
+.dnd-item:hover { border-color: var(--primary); background: var(--light); }
+.dnd-item.dragging { opacity: 0.5; }
+.dnd-item.correct { background: #d6f7e9; border-color: var(--success); color: var(--success); }
+.dnd-item.wrong { background: #fdeaea; border-color: #e74c3c; color: #e74c3c; }
+
+.dnd-zone {
+    flex: 1; min-width: 150px; background: #fff; padding: 15px; border-radius: 16px;
+    border: 3px solid #e0dff5; text-align: center; min-height: 150px;
+    display: flex; flex-direction: column; gap: 8px; transition: 0.2s;
+}
+.dnd-zone.drag-over { border-color: var(--primary); background: var(--light); }
+.dnd-zone h4 { color: var(--primary); margin-bottom: 10px; font-size: 1rem; }
+
+/* Колесо фортуны */
+.wheel-section {
+    display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;
+    background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+.wheel-wrapper { position: relative; width: 200px; height: 200px; margin-bottom: 20px; }
+.wheel {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: conic-gradient(
+        var(--primary) 0deg 45deg, var(--secondary) 45deg 90deg,
+        var(--warning) 90deg 135deg, var(--success) 135deg 180deg,
+        var(--info) 180deg 225deg, var(--primary) 225deg 270deg,
+        var(--secondary) 270deg 315deg, var(--warning) 315deg 360deg
+    );
+    transition: transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+    border: 4px solid #fff; box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+.wheel-pointer {
+    position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+    font-size: 30px; color: var(--dark); z-index: 10;
+}
+.wheel-btn {
+    padding: 12px 30px; background: var(--primary); color: #fff; border: none;
+    border-radius: 30px; font-weight: 800; font-size: 1rem; cursor: pointer; transition: 0.2s;
+}
+.wheel-btn:hover { background: var(--secondary); transform: scale(1.05); }
+.wheel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.wheel-result {
+    margin-top: 15px; font-size: 1.1rem; font-weight: 800; color: var(--primary);
+    text-align: center; min-height: 30px; max-width: 600px;
+}
+.hint-btn {
+    display: block; margin: 10px auto 0; padding: 8px 20px;
+    background: #fffbea; border: 2px solid var(--warning); border-radius: 20px;
+    font-weight: 800; color: #b8860b; cursor: pointer; transition: 0.2s; font-size: 0.9rem;
+}
+.hint-btn:hover { background: var(--warning); color: #fff; }
+.hint-text {
+    margin-top: 10px; font-size: 0.95rem; color: #636e72; background: #f7f5ff;
+    padding: 10px; border-radius: 8px; border-left: 4px solid var(--info); text-align: left;
+    animation: fadeIn 0.3s;
+}
+
+/* Викторина */
+.quiz-section {
+    background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+.quiz-q { font-size: 1.1rem; font-weight: 800; margin-bottom: 15px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+.quiz-opt {
+    padding: 12px; border: 2px solid #e0dff5; border-radius: 10px;
+    font-weight: 700; cursor: pointer; transition: 0.2s; text-align: left;
+}
+.quiz-opt:hover { background: var(--light); border-color: var(--primary); }
+.quiz-opt.correct { background: #d6f7e9; border-color: var(--success); color: var(--success); }
+.quiz-opt.wrong { background: #fdeaea; border-color: #e74c3c; color: #e74c3c; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🤝 Учимся работать в команде</h1>
+    <p class="subtitle">Интерактивный тренажер Soft Skills · 7 уровней</p>
+
+    <!-- Навигация -->
+    <div class="tabs" id="tabs"></div>
+
+    <!-- Контент -->
+    <div id="content"></div>
+</div>
+
+<script>
+// ==========================================
+// БАЗА ДАННЫХ (ПО 10 СИТУАЦИЙ В КОЛЕСЕ)
+// ==========================================
+const gameData = [
+    // 1. Почему это важно
+    {
+        title: "1. Зачем нужна команда?",
+        memo: `
+            <h3>📖 Почему работа в команде — важнейший навык?</h3>
+            <p>В современном мире <b>одиночки проигрывают командам</b>. Сложные проекты (от создания игры до полета в космос) требуют разных навыков. Один человек не может быть одновременно программистом, дизайнером и маркетологом.</p>
+            <p><b>Синергия</b> — это когда 1 + 1 = 3. Вместе вы можете сделать то, что не смогли бы по отдельности. Работодатели будущего ценят <b>4К</b>: Коммуникацию, Критическое мышление, Креативность и Кооперацию (умение работать в команде).</p>
+        `,
+        dnd: {
+            instruction: "Распредели качества: что важнее для одиночки, а что — для командного игрока?",
+            zones: ["Качества одиночки", "Качества командного игрока"],
+            items: [
+                { text: "Умение слушать", zone: 1 },
+                { text: "Полагаться только на себя", zone: 0 },
+                { text: "Гибкость и компромисс", zone: 1 },
+                { text: "Скрытность", zone: 0 },
+                { text: "Поддержка коллег", zone: 1 }
+            ]
+        },
+        wheel: [
+            { q: "Назови 3 профессии будущего, где точно нужна команда.", h: "Например: разработчик игр, врач-хирург (операция — это работа бригады), инженер-эколог." },
+            { q: "Приведи пример, когда команда сильнее одного человека.", h: "Представь, что нужно построить дом. Один будет строить 10 лет, а бригада — за месяц." },
+            { q: "Что случится, если в команде каждый будет 'тянуть одеяло на себя'?", h: "Проект развалится, потому что не будет единой цели и слаженности." },
+            { q: "Как ты думаешь, почему в космос летает целый экипаж, а не один космонавт?", h: "Слишком много систем и задач для одного человека, нужны разные специалисты." },
+            { q: "Приведи пример из истории или спорта, где победила именно слаженная команда.", h: "Например, сборная по футболу, где каждый игрок на своем месте." },
+            { q: "Что значит пословица «Один в поле не воин»? Как это связано с командами?", h: "Одному трудно справиться со сложной задачей, а вместе — легче." },
+            { q: "Назови любую командную компьютерную игру. Почему в ней нельзя победить в одиночку?", h: "В играх вроде Dota или CS нужны разные роли: танк, лекарь, стрелок." },
+            { q: "Как ты думаешь, что важнее для успеха: быть гением-одиночкой или хорошим командным игроком?", h: "В современном мире важнее уметь договариваться и работать с другими." },
+            { q: "Что такое «синергия» простыми словами?", h: "Это когда вместе получается сделать больше и лучше, чем по отдельности." },
+            { q: "Как умение работать в команде поможет тебе в будущем при выборе профессии?", h: "Работодатели ценят тех, кто умеет общаться и решать задачи сообща." }
+        ],
+        quiz: {
+            q: "Что означает слово «синергия» в контексте команды?",
+            opts: ["Когда все сильно устают", "Когда результат команды больше, чем сумма результатов одиночек", "Когда один человек делает всю работу"],
+            a: 1
+        }
+    },
+    // 2. Виды команд
+    {
+        title: "2. Виды команд",
+        memo: `
+            <h3>📖 Какие бывают команды?</h3>
+            <p>В зависимости от цели, команды бывают разными:</p>
+            <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                <li><b>Спортивные:</b> здесь важен дух соперничества и четкое распределение позиций (вратарь, защитник).</li>
+                <li><b>Творческие:</b> для генерации идей (создание мультфильма, рекламы). Важна свобода.</li>
+                <li><b>Научные/Проектные:</b> для решения сложной задачи (изобретение нового лекарства).</li>
+                <li><b>Производственные:</b> работа по четкому алгоритму (сборка автомобилей).</li>
+            </ul>
+            <p>В каждой команде свои правила игры!</p>
+        `,
+        dnd: {
+            instruction: "Соотнеси вид команды и её главную задачу.",
+            zones: ["Спортивная", "Творческая", "Производственная"],
+            items: [
+                { text: "Победить в соревновании", zone: 0 },
+                { text: "Придумать креативную идею", zone: 1 },
+                { text: "Собрать детали без брака", zone: 2 },
+                { text: "Уложиться в нормативы времени", zone: 0 },
+                { text: "Нарисовать концепт-арт", zone: 1 }
+            ]
+        },
+        wheel: [
+            { q: "Чем отличается творческая команда от производственной?", h: "В творческой важны идеи и свобода, а на производстве — четкие правила и скорость." },
+            { q: "В какой команде ты хотел бы оказаться? Почему?", h: "Подумай, что тебе ближе: придумывать новое или делать все по инструкции." },
+            { q: "Приведи пример научной команды из мультфильма или фильма.", h: "Например, команда профессора из 'Науки для детей' или герои, которые строят машину времени." },
+            { q: "Какой вид команды работает над созданием нового мультфильма?", h: "Это творческая команда (сценаристы, аниматоры, художники)." },
+            { q: "К какому типу команд относится бригада скорой помощи?", h: "Это оперативная медицинская команда, где важна скорость и четкость." },
+            { q: "Почему в спортивной команде так важен тренер?", h: "Тренер видит игру целиком, координирует действия и поддерживает." },
+            { q: "Чем отличается работа команды программистов от команды строителей?", h: "У программистов гибкий график, у строителей — точные чертежи и регламент." },
+            { q: "Приведи пример команды, которая работает в экстремальных условиях.", h: "Пожарные, спасатели или космонавты на МКС." },
+            { q: "Как ты думаешь, в цирковой труппе важна дисциплина?", h: "Да, от слаженности и дисциплины зависит безопасность трюков." },
+            { q: "Можно ли назвать семью командой? Почему?", h: "Да, в семье у каждого есть свои роли, общие цели и поддержка." }
+        ],
+        quiz: {
+            q: "Какая команда требует наиболее строгого соблюдения инструкций?",
+            opts: ["Творческая", "Спортивная", "Производственная"],
+            a: 2
+        }
+    },
+    // 3. Методы и роли
+    {
+        title: "3. Роли и Лидерство",
+        memo: `
+            <h3>📖 Роли в команде и гибкое лидерство</h3>
+            <p>В сильной команде есть разные роли:</p>
+            <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                <li><b>Генератор идей:</b> придумывает новое.</li>
+                <li><b>Критик:</b> проверяет и находит ошибки.</li>
+                <li><b>Исполнитель:</b> делает работу.</li>
+                <li><b>Организатор:</b> следит за временем и задачами.</li>
+            </ul>
+            <p><b>Гибкое лидерство:</b> лидер не обязательно должен быть одним и тем же человеком. В IT-компаниях (Agile) лидером становится тот, кто лучше разбирается в конкретной задаче.</p>
+        `,
+        dnd: {
+            instruction: "Распредели действия по ролям.",
+            zones: ["Генератор идей", "Критик", "Организатор"],
+            items: [
+                { text: "«А что если сделать вот так?»", zone: 0 },
+                { text: "«Здесь есть ошибка в расчетах»", zone: 1 },
+                { text: "«Так, у нас осталось 5 минут»", zone: 2 },
+                { text: "«Давайте попробуем нестандартный подход»", zone: 0 }
+            ]
+        },
+        wheel: [
+            { q: "Какая роль тебе ближе всего? Почему?", h: "Любишь придумывать? Ты — Генератор. Любишь проверять? Ты — Критик." },
+            { q: "Может ли лидер быть один на всю жизнь проекта?", h: "Нет, в гибком лидерстве лидер меняется в зависимости от этапа работы." },
+            { q: "Что будет, если в команде не будет критика?", h: "Команда может пропустить ошибку, и проект провалится." },
+            { q: "Кто в команде придумывает нестандартные решения?", h: "Это задача Генератора идей." },
+            { q: "Что произойдет, если в команде будет два лидера, которые спорят?", h: "Может начаться разлад, важно уметь договариваться или выбрать главного." },
+            { q: "Как ты понимаешь «гибкое лидерство»?", h: "Это когда лидером становится тот, кто лучше знает текущую задачу." },
+            { q: "Кто следит за тем, чтобы команда не отвлекалась и успела вовремя?", h: "Организатор или Хранитель времени." },
+            { q: "Может ли Исполнитель стать Лидером?", h: "Да, если он хорошо знает процесс и может вести за собой других." },
+            { q: "Почему роль Критика часто не любят в командах?", h: "Потому что он указывает на недостатки, но без него нельзя создать качественный продукт." },
+            { q: "Какую роль ты бы дал своему другу? Почему?", h: "Подумай о его навыках: он любит рисовать? Значит, он Дизайнер." }
+        ],
+        quiz: {
+            q: "Что такое гибкое лидерство?",
+            opts: ["Когда лидер кричит на всех", "Когда лидером становится тот, кто лучше подходит для текущей задачи", "Когда лидера нет вообще"],
+            a: 1
+        }
+    },
+    // 4. Интеллектуальные игры
+    {
+        title: "4. Игры (Что? Где? Когда?)",
+        memo: `
+            <h3>📖 Команда в интеллектуальных играх</h3>
+            <p>В «Что? Где? Когда?» или «Брейн-ринге» побеждает не самый умный, а самая слаженная команда.</p>
+            <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                <li><b>Капитан:</b> принимает финальное решение, какой ответ озвучить.</li>
+                <li><b>Эрудит:</b> вспоминает факты.</li>
+                <li><b>Логик:</b> анализирует и отсекает ложные версии.</li>
+                <li><b>Хранитель времени:</b> следит за секундомером.</li>
+            </ul>
+        `,
+        dnd: {
+            instruction: "Кто за что отвечает в игре?",
+            zones: ["Капитан", "Логик", "Хранитель времени"],
+            items: [
+                { text: "Говорит: «Пишем этот вариант!»", zone: 0 },
+                { text: "Следит за минутной стрелкой", zone: 2 },
+                { text: "Ищет подвох в условии задачи", zone: 1 },
+                { text: "Кричит: «Обсуждение окончено!»", zone: 0 }
+            ]
+        },
+        wheel: [
+            { q: "Почему в интеллектуальной игре нельзя перебивать друг друга?", h: "Можно не услышать правильную версию или сбить с мысли того, кто близок к ответу." },
+            { q: "Кто в команде должен следить за таймингом?", h: "Хранитель времени, чтобы команда не осталась без ответа." },
+            { q: "Что делать, если версии двух игроков не совпадают?", h: "Обсудить обе версии и выбрать ту, в которой уверены больше. Решает Капитан." },
+            { q: "Кто озвучивает окончательный ответ в «Что? Где? Когда?»?", h: "Капитан команды." },
+            { q: "Какая роль в игре нужна для поиска фактов из книг и энциклопедий?", h: "Эрудит." },
+            { q: "Что делать, если команда застряла на одном вопросе?", h: "Попробовать взглянуть на задачу с другой стороны или взять подсказку." },
+            { q: "Почему в игре важно уметь слушать всех, даже самых тихих?", h: "У них могут быть самые верные идеи, которые стесняются озвучить." },
+            { q: "Как не растеряться, если до конца раунда осталась 1 минута?", h: "Сохранять спокойствие и действовать быстро, слушая Капитана." },
+            { q: "В чем отличие капитана от остальных игроков?", h: "Он несет ответственность за финальный ответ и принимает решение." },
+            { q: "Какая роль в игре тебе нравится больше всего?", h: "Подумай, что тебе интереснее: искать факты, анализировать или руководить." }
+        ],
+        quiz: {
+            q: "Кто принимает окончательное решение об ответе в команде?",
+            opts: ["Самый громкий игрок", "Капитан", "Хранитель времени"],
+            a: 1
+        }
+    },
+    // 5. Уверенная речь
+    {
+        title: "5. Уверенная речь",
+        memo: `
+            <h3>📖 Как говорить, чтобы тебя слушали</h3>
+            <p>Даже гениальную идею можно провалить, если рассказать о ней тихо и сбивчиво.</p>
+            <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                <li><b>Осанка:</b> прямая спина, расправленные плечи.</li>
+                <li><b>Голос:</b> не тараторить, говорить чётко.</li>
+                <li><b>Паузы:</b> делать остановки после важных мыслей (2-3 секунды).</li>
+                <li><b>Взгляд:</b> смотреть на слушателей, а не в пол.</li>
+            </ul>
+        `,
+        dnd: {
+            instruction: "Отличи хорошие привычки оратора от плохих.",
+            zones: ["Хорошо (уверенно)", "Плохо (неуверенно)"],
+            items: [
+                { text: "Смотреть в глаза", zone: 0 },
+                { text: "Скрестить руки на груди", zone: 1 },
+                { text: "Делать паузы", zone: 0 },
+                { text: "Тараторить и извиняться", zone: 1 },
+                { text: "Говорить громко и четко", zone: 0 }
+            ]
+        },
+        wheel: [
+            { q: "Попробуй сказать фразу «Я готов» с радостной интонацией. А теперь — с деловой.", h: "Меняй голос: в первом случае он должен быть звонким, во втором — спокойным и размеренным." },
+            { q: "Сделай глубокий вдох и выдох. Это успокаивает перед выступлением.", h: "Вдох на 4 счета, выдох на 6. Это снижает пульс." },
+            { q: "Почему паузы в речи важны для слушателей?", h: "Они дают время обдумать информацию и перевести дух." },
+            { q: "Что делать, если ты забыл текст выступления?", h: "Не паниковать, сделать паузу, посмотреть в зал и продолжить главную мысль." },
+            { q: "Почему нельзя смотреть в пол во время речи?", h: "Это выглядит неуверенно, и ты теряешь зрительный контакт со слушателями." },
+            { q: "Как бороться с дрожью в голосе?", h: "Помогает правильное дыхание и четкая артикуляция." },
+            { q: "Как показать слушателям, что ты закончил мысль?", h: "Сделать паузу и сменить интонацию." },
+            { q: "Что делать с руками во время выступления?", h: "Использовать открытые жесты, не прятать их в карманы и не скрещивать." },
+            { q: "Как привлечь внимание слушателей в начале речи?", h: "Начать с интересного факта, вопроса или короткой истории." },
+            { q: "Произнеси скороговорку «Шла Саша по шоссе» 3 раза в разном темпе.", h: "Тренируем артикуляцию: медленно, быстрее, очень быстро." }
+        ],
+        quiz: {
+            q: "Зачем нужны паузы в речи?",
+            opts: ["Чтобы забыть текст", "Чтобы слушатели успели осмыслить информацию", "Чтобы потянуть время"],
+            a: 1
+        }
+    },
+    // 6. Актерские техники
+    {
+        title: "6. Актёрские техники",
+        memo: `
+            <h3>📖 Чувство партнера (Эмпатия)</h3>
+            <p>Чтобы команда работала как единый механизм, нужно уметь «чувствовать» друг друга.</p>
+            <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                <li><b>Упражнение «Зеркало»:</b> встаньте напротив партнера и повторяйте его движения. Это учит понимать другого без слов.</li>
+                <li><b>Упражнение «Эмоции»:</b> покажите радость, грусть или злость только мимикой и телом.</li>
+                <li><b>Перевоплощение:</b> представьте себя на месте коллеги. Что он чувствует?</li>
+            </ul>
+        `,
+        dnd: {
+            instruction: "Какое выражение лица соответствует эмоции?",
+            zones: ["Радость", "Удивление", "Грусть"],
+            items: [
+                { text: "Улыбка, глаза сияют", zone: 0 },
+                { text: "Брови подняты, рот открыт", zone: 1 },
+                { text: "Уголки губ опущены, взгляд в пол", zone: 2 }
+            ]
+        },
+        wheel: [
+            { q: "Покажи пантомимой, как ты чистишь зубы.", h: "Используй воображаемую щетку и пасту, делай круговые движения рукой." },
+            { q: "Изобрази без слов, как ты открываешь зонт под дождем.", h: "Подними руку вверх, имитируя раскрытие купола, пригнись от ветра." },
+            { q: "Как эмпатия помогает в командной работе?", h: "Ты понимаешь настроение коллеги и можешь вовремя поддержать его." },
+            { q: "Покажи мимикой удивление.", h: "Подними брови и приоткрой рот." },
+            { q: "Попробуй изобразить радость только глазами, без улыбки.", h: "Сложное упражнение на актерское мастерство. Прищурь глаза и 'улыбнись' ими." },
+            { q: "Зачем актерам нужно упражнение «Зеркало»?", h: "Оно учит чувствовать партнера и копировать его движения для слаженности." },
+            { q: "Изобрази походкой грустного человека.", h: "Плечи опущены, голова вниз, шаг медленный." },
+            { q: "Как понять без слов, что человек злится?", h: "По сжатым кулакам, нахмуренным бровям и напряженной позе." },
+            { q: "Покажи жестами: «Иди сюда».", h: "Призыв рукой к себе." },
+            { q: "Почему для команды важна эмпатия (умение чувствовать других)?", h: "Она помогает избегать конфликтов и лучше понимать потребности друг друга." }
+        ],
+        quiz: {
+            q: "Что развивает упражнение «Зеркало»?",
+            opts: ["Способность к перевоплощению и чувство партнера", "Умение быстро бегать", "Знание математики"],
+            a: 0
+        }
+    },
+    // 7. Слушать и слышать
+    {
+        title: "7. Слушать и слышать",
+        memo: `
+            <h3>📖 Активное слушание и этикет</h3>
+            <p>Слушать и слышать — не одно и то же. Слушать — это физический процесс, а слышать — значит понимать смысл.</p>
+            <ul style="margin-left:20px; margin-bottom:10px; line-height:1.6;">
+                <li><b>Не перебивай:</b> дай собеседнику закончить мысль.</li>
+                <li><b>Подтверждай:</b> кивай, используй слова «Да», «Понимаю».</li>
+                <li><b>Задавай вопросы:</b> «А что ты имеешь в виду?» Это показывает твой интерес.</li>
+                <li><b>Не отвлекайся:</b> убери телефон, смотри на говорящего.</li>
+            </ul>
+        `,
+        dnd: {
+            instruction: "Как правильно слушать?",
+            zones: ["Правильный этикет", "Плохой этикет"],
+            items: [
+                { text: "Смотреть в глаза и кивать", zone: 0 },
+                { text: "Перебивать и спорить", zone: 1 },
+                { text: "Задавать уточняющие вопросы", zone: 0 },
+                { text: "Сидеть в телефоне", zone: 1 }
+            ]
+        },
+        wheel: [
+            { q: "Что значит «активное слушание»?", h: "Это не просто молчание, а показ того, что ты вовлечен (кивки, вопросы)." },
+            { q: "Почему перебивать — это плохо?", h: "Ты показываешь неуважение и можешь упустить важную мысль." },
+            { q: "Как показать собеседнику, что ты его слышишь?", h: "Повтори его главную мысль или задай уточняющий вопрос." },
+            { q: "В чем разница между «слушать» и «слышать»?", h: "Слушать — физический процесс, а слышать — понимать смысл сказанного." },
+            { q: "Что делать, если тебе неинтересно, но нужно слушать?", h: "Попробуй найти в этом что-то полезное для себя." },
+            { q: "Почему телефон мешает слушать?", h: "Он отвлекает внимание и показывает собеседнику, что он тебе не важен." },
+            { q: "Какие слова показывают, что ты активно слушаешь?", h: "Например: «Да, точно», «Понимаю», «Интересно»." },
+            { q: "Как вежливо перебить собеседника, если у тебя есть важная мысль?", h: "Например: «Извини, можно я дополню?»." },
+            { q: "Что такое «этикет общения»?", h: "Это правила вежливости и уважения при общении." },
+            { q: "Почему важно смотреть на говорящего?", h: "Зрительный контакт показывает внимание и уважение." }
+        ],
+        quiz: {
+            q: "Что означает «активное слушание»?",
+            opts: ["Молчать, пока другой говорит", "Показывать вовлеченность (кивать, задавать вопросы) и понимать смысл", "Записывать каждое слово"],
+            a: 1
+        }
+    }
+];
+
+// ==========================================
+// ЛОГИКА РАБОТЫ
+// ==========================================
+let currentSection = 0;
+
+// 1. Отрисовка меню
+function renderTabs() {
+    const tabs = document.getElementById('tabs');
+    tabs.innerHTML = '';
+    gameData.forEach((data, index) => {
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${index === currentSection ? 'active' : ''}`;
+        btn.textContent = data.title;
+        btn.onclick = () => loadSection(index);
+        tabs.appendChild(btn);
+    });
+}
+
+// 2. Загрузка экрана
+function loadSection(index) {
+    currentSection = index;
+    renderTabs();
+    
+    const data = gameData[index];
+    const content = document.getElementById('content');
+    
+    content.innerHTML = `
+        <div class="screen active">
+            <!-- Памятка -->
+            <div class="memo">
+                ${data.memo}
+            </div>
+
+            <!-- Drag & Drop -->
+            <h3 style="margin-bottom:10px; color:var(--info);">🎮 Игра: Сортировка</h3>
+            <p style="margin-bottom:10px; font-size:0.95rem;">${data.dnd.instruction}</p>
+            <div class="dnd-container" id="dnd-container">
+                <div class="dnd-pool" id="dnd-pool">
+                    <h4>Перетащи меня 👇</h4>
+                </div>
+                ${data.dnd.zones.map((zone, zIdx) => `
+                    <div class="dnd-zone" data-zone="${zIdx}" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <h4>${zone}</h4>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Колесо фортуны -->
+            <h3 style="margin-bottom:10px; color:var(--secondary);">🎡 Колесо фортуны</h3>
+            <div class="wheel-section">
+                <div class="wheel-wrapper">
+                    <div class="wheel-pointer">▼</div>
+                    <div class="wheel" id="wheel"></div>
+                </div>
+                <button class="wheel-btn" id="spin-btn" onclick="spinWheel()">Крутить!</button>
+                <div class="wheel-result" id="wheel-result">Нажми на кнопку, чтобы получить задание</div>
+            </div>
+
+            <!-- Викторина -->
+            <h3 style="margin-bottom:10px; color:var(--success);">✅ Викторина</h3>
+            <div class="quiz-section">
+                <div class="quiz-q">${data.quiz.q}</div>
+                <div class="quiz-opts">
+                    ${data.quiz.opts.map((opt, oIdx) => `
+                        <button class="quiz-opt" onclick="checkQuiz(this, ${oIdx === data.quiz.a})">${opt}</button>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Инициализация Drag & Drop
+    initDnd(data.dnd.items);
+}
+
+// 3. Логика Drag & Drop (с поддержкой кликов)
+function initDnd(items) {
+    const pool = document.getElementById('dnd-pool');
+    let draggedItem = null;
+    let selectedItem = null;
+
+    // Перемешиваем
+    const shuffled = [...items].sort(() => Math.random() - 0.5);
+
+    shuffled.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'dnd-item';
+        el.textContent = item.text;
+        el.dataset.zone = item.zone;
+        
+        // События для мыши
+        el.draggable = true;
+        el.addEventListener('dragstart', (e) => {
+            draggedItem = el;
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        // События для клика (мобильные)
+        el.onclick = () => {
+            if (el.parentElement.classList.contains('dnd-zone')) {
+                pool.appendChild(el);
+                el.classList.remove('correct', 'wrong');
+            } else {
+                if (selectedItem) selectedItem.style.borderColor = '';
+                selectedItem = el;
+                el.style.borderColor = 'var(--primary)';
+            }
+        };
+
+        pool.appendChild(el);
+    });
+
+    // Делаем зоны кликабельными для мобильных
+    document.querySelectorAll('.dnd-zone').forEach(zone => {
+        zone.onclick = () => {
+            if (selectedItem) {
+                zone.appendChild(selectedItem);
+                selectedItem.style.borderColor = '';
+                checkDnd();
+                selectedItem = null;
+            }
+        };
+    });
+
+    // Проверка при перетаскивании
+    window.checkDnd = () => {
+        document.querySelectorAll('.dnd-zone').forEach(zone => {
+            const zoneIdx = parseInt(zone.dataset.zone);
+            const items = zone.querySelectorAll('.dnd-item');
+            items.forEach(item => {
+                if (parseInt(item.dataset.zone) === zoneIdx) {
+                    item.classList.add('correct');
+                    item.classList.remove('wrong');
+                } else {
+                    item.classList.add('wrong');
+                    item.classList.remove('correct');
+                }
+            });
+        });
+    };
+}
+
+function allowDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function drop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (window.draggedItem) {
+        e.currentTarget.appendChild(window.draggedItem);
+        checkDnd();
+        window.draggedItem = null;
+    }
+}
+
+// 4. Логика Колеса
+let isSpinning = false;
+function spinWheel() {
+    if (isSpinning) return;
+    isSpinning = true;
+    document.getElementById('spin-btn').disabled = true;
+    document.getElementById('wheel-result').innerHTML = "Крутим...";
+
+    const wheel = document.getElementById('wheel');
+    const extra = 360 * 5 + Math.random() * 360;
+    
+    wheel.style.transform = `rotate(${extra}deg)`;
+
+    setTimeout(() => {
+        isSpinning = false;
+        document.getElementById('spin-btn').disabled = false;
+        
+        const questions = gameData[currentSection].wheel;
+        const randomQ = questions[Math.floor(Math.random() * questions.length)];
+        
+        document.getElementById('wheel-result').innerHTML = `
+            <div style="margin-bottom: 10px;">${randomQ.q}</div>
+            <button class="hint-btn" onclick="toggleHint(this)">💡 Показать подсказку</button>
+            <div class="hint-text" style="display: none;">${randomQ.h}</div>
+        `;
+        
+        // Сброс поворота для следующего клика
+        setTimeout(() => {
+            wheel.style.transition = 'none';
+            wheel.style.transform = 'rotate(0deg)';
+            setTimeout(() => wheel.style.transition = 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)', 50);
+        }, 3000);
+    }, 3000);
+}
+
+// 5. Функция подсказки
+function toggleHint(btn) {
+    const hint = btn.nextElementSibling;
+    if (hint.style.display === 'none') {
+        hint.style.display = 'block';
+        btn.textContent = 'Скрыть подсказку';
+    } else {
+        hint.style.display = 'none';
+        btn.textContent = '💡 Показать подсказку';
+    }
+}
+
+// 6. Логика Викторины
+function checkQuiz(btn, isCorrect) {
+    const parent = btn.parentElement;
+    if (parent.dataset.answered) return;
+    parent.dataset.answered = 'true';
+    
+    if (isCorrect) {
+        btn.classList.add('correct');
+    } else {
+        btn.classList.add('wrong');
+    }
+}
+
+// ==========================================
+// СТАРТ
+// ==========================================
+loadSection(0);
+</script>
+</body>
+</html>
